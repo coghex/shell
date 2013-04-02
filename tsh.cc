@@ -156,6 +156,8 @@ void eval(char *cmdline)
   // use below to launch a process.
   //
   char *argv[MAXARGS];
+  pid_t pid;
+  int status;
 
   //
   // The 'bg' variable is TRUE if the job should run
@@ -164,6 +166,23 @@ void eval(char *cmdline)
   int bg = parseline(cmdline, argv); 
   if (argv[0] == NULL)  
     return;   /* ignore empty lines */
+  if (!builtin_cmd(argv)) {
+    if ((pid = fork()) == 0) {
+      if (execve(argv[0], argv, environ) < 0) {
+        printf ("%s: Command not found.\n", argv[0]);
+        exit(0);
+      }
+    }
+    if (!bg) {
+      if (waitpid(pid, &status, 0) < 0)  {
+        unix_error("waitpid error");
+      }
+    }
+    else {
+      addjob(jobs, pid, BG, cmdline);
+      printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
+    }
+  }
 
   return;
 }
@@ -180,6 +199,9 @@ void eval(char *cmdline)
 int builtin_cmd(char **argv) 
 {
   string cmd(argv[0]);
+  if (cmd == "quit") {
+    exit(0);
+  }
   return 0;     /* not a builtin command */
 }
 
