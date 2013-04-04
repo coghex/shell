@@ -202,6 +202,10 @@ int builtin_cmd(char **argv)
   if (cmd == "quit") {
     exit(0);
   }
+  if (cmd == "jobs") {
+    listjobs(jobs);
+    return 1;
+  }
   return 0;     /* not a builtin command */
 }
 
